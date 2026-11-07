@@ -1,0 +1,42 @@
+appId: com.audioleveler.pro
+productName: Audio Leveler Pro
+copyright: Copyright © 2026 Matheus D. Barros
+directories:
+  buildResources: build
+  output: dist
+# Allowlist: only the build output is packaged (production node_modules are added automatically).
+files:
+  - out/**
+  - package.json
+  - '!**/*.map'
+# FFmpeg/FFprobe binaries cannot be executed from inside the asar archive.
+asarUnpack:
+  - node_modules/ffmpeg-static/**
+  - node_modules/ffprobe-static/**
+win:
+  target:
+    - nsis
+  files:
+    - '!node_modules/ffprobe-static/bin/darwin/**'
+    - '!node_modules/ffprobe-static/bin/linux/**'
+    - '!node_modules/ffprobe-static/bin/win32/ia32/**'
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  artifactName: ${name}-${version}-setup.${ext}
+mac:
+  target:
+    - dmg
+  category: public.app-category.music
+  files:
+    - '!node_modules/ffprobe-static/bin/win32/**'
+    - '!node_modules/ffprobe-static/bin/linux/**'
+linux:
+  target:
+    - AppImage
+    - deb
+  category: Audio
+  maintainer: Matheus D. Barros
+  files:
+    - '!node_modules/ffprobe-static/bin/win32/**'
+    - '!node_modules/ffprobe-static/bin/darwin/**'
