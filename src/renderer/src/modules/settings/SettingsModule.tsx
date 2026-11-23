@@ -105,13 +105,13 @@ export function SettingsModule() {
                 <li key={p.id}>
                   <Icon name="star" size={14} />
                   <span>{p.name}</span>
-                  <span className="chip">{p.module === 'audio-convert' ? 'Áudio' : 'Vídeo'}</span>
+                  <span className="chip">{p.module === 'audio-convert' ? 'Áudio' : p.module === 'image-convert' ? 'Imagem' : 'Vídeo'}</span>
                   <Button variant="ghost" size="sm" icon="trash" aria-label={`Excluir ${p.name}`} onClick={() => void presets.remove(p.id)} />
                 </li>
               ))}
             </ul>
           )}
-          <p className="field-hint">{presets.presets.filter((p) => p.builtin).length} presets prontos: YouTube, Shorts, TikTok, Reels, WhatsApp, Telegram, Podcast e FLAC.</p>
+          <p className="field-hint">{presets.presets.filter((p) => p.builtin).length} presets prontos: YouTube, Shorts, TikTok, Reels, WhatsApp, Telegram, Podcast, FLAC e imagens (Web, WhatsApp, E-mail, Instagram, AVIF, PNG).</p>
         </Card>
 
         <Card title="Sobre">

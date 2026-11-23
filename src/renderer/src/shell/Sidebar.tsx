@@ -7,6 +7,7 @@ export const MODULES: ReadonlyArray<{ id: ModuleId; label: string; icon: IconNam
   { id: 'normalizer', label: 'Normalizador de Áudio', icon: 'wave' },
   { id: 'audio-converter', label: 'Conversor de Áudio', icon: 'music' },
   { id: 'video-converter', label: 'Conversor de Vídeo', icon: 'film' },
+  { id: 'image-converter', label: 'Conversor de Imagens', icon: 'image' },
   { id: 'audio-editor', label: 'Editor de Áudio', icon: 'scissors' },
   { id: 'video-editor', label: 'Editor de Vídeo', icon: 'repeat' },
   { id: 'batch', label: 'Ferramentas em Lote', icon: 'layers' },

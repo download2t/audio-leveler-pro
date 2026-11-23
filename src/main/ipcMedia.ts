@@ -3,6 +3,7 @@ import { IPC } from '../shared/ipc';
 import {
   AUDIO_EXTENSIONS,
   IMAGE_EXTENSIONS,
+  PHOTO_EXTENSIONS,
   SUBTITLE_EXTENSIONS,
   VIDEO_EXTENSIONS,
   type AuxFileKind,
@@ -12,10 +13,13 @@ import {
   type QueueAction
 } from '../shared/media';
 import { scanPaths } from './lib/fileScanner';
+import { extensionOf } from '../core/pathUtils';
+import { probeImage } from './media/imageTools';
 import type { MediaProbe } from './media/probe';
 import type { AudioConverterService } from './services/AudioConverterService';
 import type { AudioEditorService } from './services/AudioEditorService';
 import type { BatchProcessingService } from './services/BatchProcessingService';
+import type { ImageConverterService } from './services/ImageConverterService';
 import type { VideoConverterService } from './services/VideoConverterService';
 import type { VideoEditorService } from './services/VideoEditorService';
 import type { HistoryStore } from './stores/historyStore';
@@ -30,10 +34,20 @@ export interface MediaIpcContext {
   videoConverter: VideoConverterService;
   audioEditor: AudioEditorService;
   videoEditor: VideoEditorService;
+  imageConverter: ImageConverterService;
 }
 
-const extensionsFor = (kind: MediaKind): string[] =>
-  kind === 'audio' ? AUDIO_EXTENSIONS : kind === 'video' ? VIDEO_EXTENSIONS : [...AUDIO_EXTENSIONS, ...VIDEO_EXTENSIONS];
+const extensionsFor = (kind: MediaKind): string[] => {
+  switch (kind) {
+    case 'audio': return AUDIO_EXTENSIONS;
+    case 'video': return VIDEO_EXTENSIONS;
+    case 'image': return PHOTO_EXTENSIONS;
+    case 'media': return [...AUDIO_EXTENSIONS, ...VIDEO_EXTENSIONS];
+    case 'all': return [...AUDIO_EXTENSIONS, ...VIDEO_EXTENSIONS, ...PHOTO_EXTENSIONS];
+  }
+};
+const PHOTO_SET = new Set(PHOTO_EXTENSIONS);
+const KIND_FILTER_NAME: Record<MediaKind, string> = { audio: 'Áudio', video: 'Vídeo', image: 'Imagens', media: 'Mídia', all: 'Mídia e imagens' };
 
 const AUX_FILTERS: Record<AuxFileKind, Electron.FileFilter[]> = {
   audio: [{ name: 'Áudio', extensions: AUDIO_EXTENSIONS }],
@@ -52,7 +66,7 @@ function isOperationRequest(value: unknown): value is OperationRequest {
   if (!value || typeof value !== 'object') return false;
   const r = value as Record<string, unknown>;
   return (
-    ['audio-convert', 'video-convert', 'audio-edit', 'video-edit'].includes(r['module'] as string) &&
+    ['audio-convert', 'video-convert', 'audio-edit', 'video-edit', 'image-convert'].includes(r['module'] as string) &&
     Array.isArray(r['files']) &&
     (r['files'] as unknown[]).every((f) => typeof f === 'string') &&
     typeof r['outputDir'] === 'string'
@@ -73,6 +87,8 @@ export function registerMediaIpc(ctx: MediaIpcContext): void {
         return { preview: () => ctx.videoConverter.preview(req), enqueue: () => ctx.videoConverter.enqueue(req) };
       case 'audio-edit':
         return { preview: () => ctx.audioEditor.preview(req), enqueue: () => ctx.audioEditor.enqueue(req) };
+      case 'image-convert':
+        return { preview: () => ctx.imageConverter.preview(req), enqueue: () => ctx.imageConverter.enqueue(req) };
       case 'video-edit':
         return { preview: () => ctx.videoEditor.preview(req), enqueue: () => ctx.videoEditor.enqueue(req) };
     }
@@ -82,7 +98,7 @@ export function registerMediaIpc(ctx: MediaIpcContext): void {
     openDialog(event, {
       title: 'Adicionar arquivos',
       properties: ['openFile', 'multiSelections'],
-      filters: [{ name: kind === 'audio' ? 'Áudio' : kind === 'video' ? 'Vídeo' : 'Mídia', extensions: extensionsFor(kind) }]
+      filters: [{ name: KIND_FILTER_NAME[kind] ?? 'Mídia', extensions: extensionsFor(kind) }]
     })
   );
 
@@ -97,7 +113,8 @@ export function registerMediaIpc(ctx: MediaIpcContext): void {
 
   ipcMain.handle(IPC.probeMedia, (_event, path: unknown) => {
     if (typeof path !== 'string') throw new Error('Caminho inválido');
-    return ctx.probe.probe(path);
+    // Photos are read with sharp (EXIF orientation, AVIF); audio/video with ffprobe.
+    return PHOTO_SET.has(extensionOf(path)) ? probeImage(path) : ctx.probe.probe(path);
   });
 
   ipcMain.handle(IPC.previewOperation, (_event, req: unknown) => {

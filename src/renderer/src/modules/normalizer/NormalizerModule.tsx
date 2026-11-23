@@ -18,7 +18,7 @@ import { ModuleHeader } from '../../shell/ModuleLayout';
 import { useApp } from '../../state/AppContext';
 import { filesReducer, initialFilesState, pathKey } from '../../state/filesReducer';
 
-/** Loudness normalization module (the original Audio Leveler Pro screen). */
+/** Loudness normalization module (the original screen of the app). */
 export function NormalizerModule({ active }: { active: boolean }) {
   const { settingsApi, env, notify } = useApp();
   const { settings } = settingsApi;
@@ -171,7 +171,7 @@ export function NormalizerModule({ active }: { active: boolean }) {
   const saveCsv = useCallback(async () => {
     const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
     try {
-      const saved = await window.api.saveReport(itemsToCsv(items), `audio-leveler-relatorio-${stamp}.csv`);
+      const saved = await window.api.saveReport(itemsToCsv(items), `ferramentaskit-relatorio-${stamp}.csv`);
       if (saved) notify(`Relatório salvo em ${saved}`, 'success');
     } catch (err) {
       notify(errorText(err), 'error');

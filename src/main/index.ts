@@ -1,3 +1,4 @@
+import { copyFileSync, existsSync, mkdirSync } from 'node:fs';
 import { cpus } from 'node:os';
 import { join } from 'node:path';
 import { app, BrowserWindow, nativeTheme, shell } from 'electron';
@@ -11,6 +12,7 @@ import { AudioConverterService } from './services/AudioConverterService';
 import { AudioEditorService } from './services/AudioEditorService';
 import { BatchProcessingService } from './services/BatchProcessingService';
 import { findSystemFont } from './services/fonts';
+import { ImageConverterService } from './services/ImageConverterService';
 import { VideoConverterService } from './services/VideoConverterService';
 import { VideoEditorService } from './services/VideoEditorService';
 import { SettingsStore } from './settingsStore';
@@ -19,6 +21,24 @@ import { PresetStore } from './stores/presetStore';
 
 const log = logger.scope('main');
 
+const PREVIOUS_APP_NAME = 'Audio Leveler Pro';
+const USER_FILES = ['settings.json', 'presets.json', 'history.json'];
+
+/** The app was renamed: bring settings, presets and history from the old user data folder once. */
+function migrateUserData(): void {
+  const current = app.getPath('userData');
+  const previous = join(app.getPath('appData'), PREVIOUS_APP_NAME);
+  if (previous === current || !existsSync(previous) || existsSync(join(current, 'settings.json'))) return;
+  try {
+    mkdirSync(current, { recursive: true });
+    const copied = USER_FILES.filter((f) => existsSync(join(previous, f)));
+    for (const f of copied) copyFileSync(join(previous, f), join(current, f));
+    if (copied.length) log.info(`Dados migrados de "${PREVIOUS_APP_NAME}"`, copied);
+  } catch (err) {
+    log.warn('Não foi possível migrar os dados da versão anterior', err);
+  }
+}
+
 function createWindow(): BrowserWindow {
   const win = new BrowserWindow({
     width: 1400,
@@ -26,7 +46,7 @@ function createWindow(): BrowserWindow {
     minWidth: 1040,
     minHeight: 640,
     show: false,
-    title: 'Audio Leveler Pro',
+    title: 'FerramentasKit',
     autoHideMenuBar: true,
     backgroundColor: nativeTheme.shouldUseDarkColors ? '#0f1115' : '#f6f7f9',
     webPreferences: {
@@ -68,18 +88,19 @@ if (!app.requestSingleInstanceLock()) {
 
   void app.whenReady().then(() => {
     logger.init(app.getPath('logs'));
-    log.info(`Audio Leveler Pro ${app.getVersion()} iniciado`, { platform: process.platform, arch: process.arch });
+    migrateUserData();
+    log.info(`FerramentasKit ${app.getVersion()} iniciado`, { platform: process.platform, arch: process.arch });
 
     const defaultConcurrency = Math.max(1, Math.min(8, cpus().length - 1));
     const store = new SettingsStore(join(app.getPath('userData'), 'settings.json'), defaultConcurrency, logger.scope('settings'));
     if (!store.get().export.outputDir) {
       const current = store.get();
-      store.save({ ...current, export: { ...current.export, outputDir: join(app.getPath('music'), 'Audio Leveler Pro') } });
+      store.save({ ...current, export: { ...current.export, outputDir: join(app.getPath('music'), 'FerramentasKit') } });
     }
 
     if (!store.get().media.outputDir) {
       const current = store.get();
-      store.save({ ...current, media: { ...current.media, outputDir: join(app.getPath('music'), 'Audio Leveler Pro', 'Convertidos') } });
+      store.save({ ...current, media: { ...current.media, outputDir: join(app.getPath('music'), 'FerramentasKit', 'Convertidos') } });
     }
 
     const userData = app.getPath('userData');
@@ -108,7 +129,8 @@ if (!app.requestSingleInstanceLock()) {
       audioConverter: new AudioConverterService(deps),
       videoConverter: new VideoConverterService(deps),
       audioEditor: new AudioEditorService(deps),
-      videoEditor: new VideoEditorService(deps)
+      videoEditor: new VideoEditorService(deps),
+      imageConverter: new ImageConverterService({ queue, concurrency: () => store.get().media.concurrency })
     });
     app.on('before-quit', () => queue.cancelAll());
     createWindow();

@@ -45,5 +45,5 @@ export const DEFAULT_SETTINGS: AppSettings = {
 
 export const APP_CREDITS = {
   developer: 'Matheus D. Barros',
-  appName: 'Audio Leveler Pro'
+  appName: 'FerramentasKit'
 } as const;

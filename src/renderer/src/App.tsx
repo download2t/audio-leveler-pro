@@ -9,6 +9,7 @@ import { useToasts } from './hooks/useToasts';
 import { AudioConverterModule } from './modules/audioConverter/AudioConverterModule';
 import { AudioEditorModule } from './modules/audioEditor/AudioEditorModule';
 import { BatchModule } from './modules/batch/BatchModule';
+import { ImageConverterModule } from './modules/imageConverter/ImageConverterModule';
 import { NormalizerModule } from './modules/normalizer/NormalizerModule';
 import { SettingsModule } from './modules/settings/SettingsModule';
 import { VideoConverterModule } from './modules/videoConverter/VideoConverterModule';
@@ -21,6 +22,7 @@ const RENDER: Record<ModuleId, (active: boolean) => ReactNode> = {
   normalizer: (active) => <NormalizerModule active={active} />,
   'audio-converter': (active) => <AudioConverterModule active={active} />,
   'video-converter': (active) => <VideoConverterModule active={active} />,
+  'image-converter': (active) => <ImageConverterModule active={active} />,
   'audio-editor': (active) => <AudioEditorModule active={active} />,
   'video-editor': (active) => <VideoEditorModule active={active} />,
   batch: (active) => <BatchModule active={active} />,

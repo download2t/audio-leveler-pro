@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, webUtils, type IpcRendererEvent } from 'electron';
-import { IPC, type AudioLevelerApi } from '../shared/ipc';
+import { IPC, type FerramentasKitApi } from '../shared/ipc';
 import type { HistoryEntry, QueueSnapshot } from '../shared/media';
 import type { BatchEvent } from '../shared/types';
 
@@ -9,7 +9,7 @@ function subscribe<T>(channel: string, listener: (payload: T) => void): () => vo
   return () => ipcRenderer.removeListener(channel, handler);
 }
 
-const api: AudioLevelerApi = {
+const api: FerramentasKitApi = {
   getPathForFile: (file) => webUtils.getPathForFile(file),
   pickFiles: () => ipcRenderer.invoke(IPC.pickFiles),
   pickFolders: () => ipcRenderer.invoke(IPC.pickFolders),

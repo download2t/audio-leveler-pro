@@ -6,7 +6,7 @@ import { extname, join } from 'node:path';
 import { aggregateQueue, etaSeconds, jobProgress, speedOf } from '../../core/queueMath';
 import type { HistoryEntry, QueueJob, QueueSnapshot } from '../../shared/media';
 import type { FfmpegBinaries } from '../ffmpeg/locator';
-import { isCancelled, runProcess, type RunOptions, type RunResult } from '../ffmpeg/runner';
+import { CancelledError, isCancelled, runProcess, type RunOptions, type RunResult } from '../ffmpeg/runner';
 import type { ScopedLogger } from '../logger';
 import type { JobPlan } from './jobPlan';
 
@@ -230,6 +230,15 @@ export class BatchProcessingService {
         view.stepIndex = i;
         e.stepStartedAt = Date.now();
         e.pausedMs = 0;
+        if (step.run) {
+          // In-process work (photos): cannot be interrupted midway, only between steps.
+          if (controller.signal.aborted) throw new CancelledError();
+          await step.run({ workDir: plan.workDir, signal: controller.signal });
+          if (controller.signal.aborted) throw new CancelledError();
+          view.progress = jobProgress(durations, i, 1);
+          this.changed();
+          continue;
+        }
         await this.run(ffmpeg, step.args, {
           signal: controller.signal,
           cwd: step.inWorkDir ? plan.workDir : undefined,

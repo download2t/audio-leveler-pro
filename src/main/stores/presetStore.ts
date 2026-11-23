@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { Preset } from '../../shared/media';
-import { BUILTIN_PRESETS, DEFAULT_AUDIO_CONVERT, DEFAULT_VIDEO_CONVERT } from '../../shared/presets';
+import { BUILTIN_PRESETS, DEFAULT_AUDIO_CONVERT, DEFAULT_IMAGE_CONVERT, DEFAULT_VIDEO_CONVERT } from '../../shared/presets';
 import type { ScopedLogger } from '../logger';
 import { JsonStore } from './jsonStore';
 
@@ -14,6 +14,9 @@ function parsePresets(raw: unknown): Preset[] {
     const options = r['options'] as Record<string, unknown>;
     if (r['module'] === 'audio-convert') {
       out.push({ id: r['id'], name: r['name'], module: 'audio-convert', builtin: false, options: { ...DEFAULT_AUDIO_CONVERT, ...options } });
+    } else if (r['module'] === 'image-convert') {
+      const resize = { ...DEFAULT_IMAGE_CONVERT.resize, ...((options['resize'] as object | undefined) ?? {}) };
+      out.push({ id: r['id'], name: r['name'], module: 'image-convert', builtin: false, options: { ...DEFAULT_IMAGE_CONVERT, ...options, resize } });
     } else if (r['module'] === 'video-convert') {
       out.push({ id: r['id'], name: r['name'], module: 'video-convert', builtin: false, options: { ...DEFAULT_VIDEO_CONVERT, ...options } });
     }

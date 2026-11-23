@@ -5,7 +5,7 @@ import type { QueueApi } from '../hooks/useQueue';
 import type { SettingsApi } from '../hooks/useSettings';
 import type { ToastKind } from '../hooks/useToasts';
 
-export type ModuleId = 'normalizer' | 'audio-converter' | 'video-converter' | 'audio-editor' | 'video-editor' | 'batch' | 'settings';
+export type ModuleId = 'normalizer' | 'audio-converter' | 'video-converter' | 'image-converter' | 'audio-editor' | 'video-editor' | 'batch' | 'settings';
 
 export interface AppContextValue {
   settingsApi: SettingsApi;

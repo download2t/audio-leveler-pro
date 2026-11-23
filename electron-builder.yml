@@ -1,5 +1,6 @@
 appId: com.audioleveler.pro
-productName: Audio Leveler Pro
+# appId kept from the previous name so installing upgrades the old version in place.
+productName: FerramentasKit
 copyright: Copyright © 2026 Matheus D. Barros
 directories:
   buildResources: build
@@ -13,6 +14,9 @@ files:
 asarUnpack:
   - node_modules/ffmpeg-static/**
   - node_modules/ffprobe-static/**
+  # sharp's native libvips binaries
+  - node_modules/sharp/**
+  - node_modules/@img/**
 win:
   target:
     - nsis

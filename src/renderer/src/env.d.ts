@@ -1,8 +1,8 @@
-import type { AudioLevelerApi } from '../../shared/ipc';
+import type { FerramentasKitApi } from '../../shared/ipc';
 
 declare global {
   interface Window {
-    api: AudioLevelerApi;
+    api: FerramentasKitApi;
   }
 }
 

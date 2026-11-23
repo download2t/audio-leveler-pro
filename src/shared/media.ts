@@ -14,7 +14,10 @@ export const AUDIO_EXTENSIONS = ['mp3', 'wav', 'flac', 'aac', 'm4a', 'ogg', 'opu
 export const VIDEO_EXTENSIONS = ['mp4', 'mkv', 'avi', 'mov', 'webm', 'mpeg', 'mpg', 'flv', 'm4v', 'wmv', '3gp', 'ts', 'mts', 'm2ts', 'ogv'];
 export const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'webp', 'bmp'];
 export const SUBTITLE_EXTENSIONS = ['srt', 'ass', 'ssa', 'vtt'];
-export type MediaKind = 'audio' | 'video' | 'media';
+/** Photos handled by the image converter (sharp/libvips). */
+export const PHOTO_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'avif', 'tif', 'tiff', 'gif', 'svg'];
+/** 'media' = audio + video, 'all' = audio + video + photos. */
+export type MediaKind = 'audio' | 'video' | 'media' | 'image' | 'all';
 
 export interface MediaInfo {
   path: string;
@@ -25,6 +28,8 @@ export interface MediaInfo {
   video: { codec: string; width: number; height: number; fps: number; bitRate: number | null } | null;
   audio: { codec: string; sampleRate: number; channels: number; bitRate: number | null } | null;
   hasCover: boolean;
+  /** Set for still images (photos); width/height already account for EXIF rotation. */
+  image?: { format: string; width: number; height: number; hasAlpha: boolean };
   tags: Record<string, string>;
 }
 
@@ -115,9 +120,34 @@ export interface EditOutputOptions {
   format: 'original' | AudioFormat | VideoFormat;
 }
 
-export type OperationModule = 'audio-convert' | 'video-convert' | 'audio-edit' | 'video-edit';
+export type ImageFormat = 'jpeg' | 'png' | 'webp' | 'avif' | 'tiff' | 'gif';
+export type ImageResizeMode = 'none' | 'fit' | 'percent' | 'exact';
+
+export interface ImageConvertOptions {
+  format: 'original' | ImageFormat;
+  /** quality = fixed quality; target-size = largest quality under targetKb; lossless = no quality loss. */
+  compression: 'quality' | 'target-size' | 'lossless';
+  quality: number;
+  targetKb: number;
+  resize: {
+    mode: ImageResizeMode;
+    width: number;
+    height: number;
+    percent: number;
+    /** exact mode: cover = crop to fill, contain = add borders, fill = stretch. */
+    fit: 'cover' | 'contain' | 'fill';
+    /** Allow making images larger than the original. */
+    enlarge: boolean;
+  };
+  keepMetadata: boolean;
+  /** PNG/GIF: quantize to a palette (much smaller files, like pngquant). */
+  palette: boolean;
+}
+
+export type OperationModule = 'audio-convert' | 'video-convert' | 'audio-edit' | 'video-edit' | 'image-convert';
 
 export type OperationRequest =
+  | { module: 'image-convert'; files: string[]; outputDir: string; options: ImageConvertOptions }
   | { module: 'audio-convert'; files: string[]; outputDir: string; options: AudioConvertOptions }
   | { module: 'video-convert'; files: string[]; outputDir: string; options: VideoConvertOptions }
   | { module: 'audio-edit'; files: string[]; outputDir: string; op: AudioEditOp; output: EditOutputOptions }
@@ -178,9 +208,10 @@ export interface HistoryEntry {
   error?: string;
 }
 
-export type PresetModule = 'audio-convert' | 'video-convert';
+export type PresetModule = 'audio-convert' | 'video-convert' | 'image-convert';
 
 export type Preset =
+  | { id: string; name: string; module: 'image-convert'; builtin: boolean; options: ImageConvertOptions }
   | { id: string; name: string; module: 'audio-convert'; builtin: boolean; options: AudioConvertOptions }
   | { id: string; name: string; module: 'video-convert'; builtin: boolean; options: VideoConvertOptions };
 

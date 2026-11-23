@@ -1,8 +1,8 @@
 {
-  "name": "audio-leveler-pro",
-  "productName": "Audio Leveler Pro",
-  "version": "2.0.0",
-  "description": "Suíte multimídia: normalização, conversão e edição de áudio e vídeo em lote com FFmpeg.",
+  "name": "ferramentaskit",
+  "productName": "FerramentasKit",
+  "version": "2.1.0",
+  "description": "FerramentasKit: suíte multimídia para normalizar, converter e editar áudio, vídeo e fotos em lote.",
   "main": "./out/main/index.js",
   "author": "Matheus D. Barros",
   "license": "MIT",
@@ -23,7 +23,8 @@
   },
   "dependencies": {
     "ffmpeg-static": "5.2.0",
-    "ffprobe-static": "3.1.0"
+    "ffprobe-static": "3.1.0",
+    "sharp": "0.33.5"
   },
   "devDependencies": {
     "@types/ffprobe-static": "2.0.3",

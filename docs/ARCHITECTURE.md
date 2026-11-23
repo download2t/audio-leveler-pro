@@ -1,4 +1,4 @@
-# Audio Leveler Pro — Suíte Multimídia · Arquitetura
+# FerramentasKit — Suíte Multimídia · Arquitetura
 
 Evolução do normalizador para uma suíte com 7 módulos. Princípio central: **toda operação vira um
 `JobPlan` (lista de passos FFmpeg) que entra em uma única fila** (`BatchProcessingService`). Os
@@ -85,6 +85,7 @@ entrada no **histórico** (persistido, últimos 500).
 | Normalizador | áudio | 1:1 | inalterado (LUFS/RG/Pico/RMS); grava no histórico |
 | Conversor de Áudio | áudio (lote) | 1:1 | MP3/WAV/FLAC/AAC/M4A/OGG/OPUS/WMA, codec, bitrate, 44.1/48/96 kHz, canais, metadados, estimativa de tamanho |
 | Conversor de Vídeo | vídeo (lote) | 1:1 | MP4/MKV/AVI/MOV/WEBM/MPEG/FLV, H264/H265/AV1/VP9 (validado por contêiner), resolução, qualidade (CRF), FPS, áudio; tamanho original/estimado, tempo estimado, comando FFmpeg |
+| Conversor de Imagens | fotos (lote) | 1:1 | JPEG/PNG/WebP/AVIF/TIFF/GIF via **sharp** (libvips), qualidade, tamanho máximo (busca binária de qualidade), sem perda, paleta PNG, redimensionar, EXIF/GPS, orientação automática; passo *in-process* na mesma fila |
 | Editor de Áudio | áudio | 1:1 ou N:1 | juntar (com crossfade), dividir, cortar, remover silêncio, fade in, fade out, volume, velocidade (com ou sem preservar o tom), mono/estéreo, Loop/Estender |
 | Editor de Vídeo | vídeo | 1:1, N:1, 1:N | juntar, cortar, dividir, remover trechos, redimensionar, rotacionar, espelhar, extrair/substituir áudio, legenda (gravada ou faixa), marca d'água (imagem/texto), GIF, Loop/Estender |
 | Ferramentas em Lote | qualquer | — | fila (pausar/continuar/cancelar/reordenar), histórico, aplicar um preset a centenas de arquivos |
@@ -100,6 +101,14 @@ entrada no **histórico** (persistido, últimos 500).
 - **Crossfade:** passo 1 gera uma **unidade de loop contínua**: o corpo `[t, d−t]` mais o crossfade da
   cauda `[d−t, d]` com a cabeça `[0, t]`, com duração `d − t`. O passo 2 repete essa unidade por
   cópia, então o custo não cresce com o número de repetições (10 min a partir de 3 s continua rápido).
+
+### Imagens (sharp)
+
+Fotos não usam FFmpeg: o `ImageConverterService` cria `JobPlan`s cujo passo tem `run()` (executado no
+próprio processo main com sharp) em vez de `args`. A fila trata esse passo como os outros (progresso,
+cancelamento entre passos, entrega atômica e histórico). A prévia **codifica de verdade o primeiro
+arquivo**, então o tamanho exibido é medido, não estimado. `sharp.cache({ files: 0 })` evita manter as
+fotos abertas, o que no Windows bloquearia os originais.
 
 ## 5. Presets
 

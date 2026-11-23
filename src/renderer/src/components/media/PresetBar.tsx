@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { AudioConvertOptions, Preset, VideoConvertOptions } from '../../../../shared/media';
+import type { AudioConvertOptions, ImageConvertOptions, Preset, VideoConvertOptions } from '../../../../shared/media';
 import { errorText } from '../../lib/labels';
 import { useApp } from '../../state/AppContext';
 import { Button } from '../ui/Button';
@@ -8,7 +8,8 @@ import { Modal } from '../ui/Modal';
 
 type PresetBarProps =
   | { module: 'audio-convert'; current: AudioConvertOptions; onApply: (o: AudioConvertOptions) => void }
-  | { module: 'video-convert'; current: VideoConvertOptions; onApply: (o: VideoConvertOptions) => void };
+  | { module: 'video-convert'; current: VideoConvertOptions; onApply: (o: VideoConvertOptions) => void }
+  | { module: 'image-convert'; current: ImageConvertOptions; onApply: (o: ImageConvertOptions) => void };
 
 export function PresetBar(props: PresetBarProps) {
   const { presets, notify } = useApp();
@@ -24,6 +25,7 @@ export function PresetBar(props: PresetBarProps) {
     if (!preset) return;
     if (preset.module === 'audio-convert' && props.module === 'audio-convert') props.onApply(preset.options);
     if (preset.module === 'video-convert' && props.module === 'video-convert') props.onApply(preset.options);
+    if (preset.module === 'image-convert' && props.module === 'image-convert') props.onApply(preset.options);
   };
 
   const save = async (): Promise<void> => {

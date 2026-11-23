@@ -4,7 +4,7 @@ import type { MediaFilesApi } from '../../hooks/useMediaFiles';
 import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
 
-const KIND_LABEL: Record<MediaKind, string> = { audio: 'áudio', video: 'vídeo', media: 'áudio ou vídeo' };
+const KIND_LABEL: Record<MediaKind, string> = { audio: 'áudio', video: 'vídeo', media: 'áudio ou vídeo', image: 'imagem', all: 'áudio, vídeo ou imagem' };
 
 export function MediaFileList({
   api,
@@ -42,7 +42,7 @@ export function MediaFileList({
           </Button>
         </div>
         <span className="toolbar-count">
-          {files.length} arquivo(s) · {formatDuration(totalDuration || null)} · {formatBytes(totalSize)}
+          {files.length} arquivo(s){kind === 'image' ? '' : ` · ${formatDuration(totalDuration || null)}`} · {formatBytes(totalSize)}
           {api.probing && ' · lendo…'}
         </span>
       </div>
@@ -50,7 +50,7 @@ export function MediaFileList({
       {files.length === 0 ? (
         <div className="empty-state compact">
           <div className="empty-icon">
-            <Icon name={kind === 'video' ? 'film' : kind === 'audio' ? 'music' : 'layers'} size={30} />
+            <Icon name={kind === 'video' ? 'film' : kind === 'audio' ? 'music' : kind === 'image' ? 'image' : 'layers'} size={30} />
           </div>
           <h2>Arraste arquivos de {KIND_LABEL[kind]} ou pastas</h2>
           {hint && <p>{hint}</p>}
@@ -66,9 +66,12 @@ export function MediaFileList({
       ) : (
         <div className="media-rows">
           {files.map((f, i) => {
+            const img = f.info?.image;
             const v = f.info?.video;
             const a = f.info?.audio;
-            const details = v
+            const details = img
+              ? `${img.width}×${img.height} · ${img.format}${img.hasAlpha ? ' · transparência' : ''}`
+              : v
               ? `${v.width}×${v.height} · ${Math.round(v.fps * 100) / 100} fps · ${v.codec.toUpperCase()}${a ? ` + ${a.codec.toUpperCase()}` : ''}`
               : a
                 ? `${a.codec.toUpperCase()} · ${(a.sampleRate / 1000).toFixed(1)} kHz · ${a.channels === 1 ? 'mono' : a.channels === 2 ? 'estéreo' : `${a.channels} canais`}${a.bitRate ? ` · ${Math.round(a.bitRate / 1000)} kbps` : ''}`
@@ -80,7 +83,7 @@ export function MediaFileList({
                   <span className="file-name">{f.name}</span>
                   <span className="file-meta">{f.error ?? (f.info ? details : 'Lendo informações…')}</span>
                 </div>
-                <span className="mono media-col">{formatDuration(f.info?.durationSec)}</span>
+                <span className="mono media-col">{img ? '' : formatDuration(f.info?.durationSec)}</span>
                 <span className="mono media-col">{formatBytes(f.size)}</span>
                 <div className="media-actions">
                   {reorderable && (

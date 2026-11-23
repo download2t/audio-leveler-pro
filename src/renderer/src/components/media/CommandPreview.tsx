@@ -10,7 +10,8 @@ export function CommandPreview({
   busy,
   disabled,
   onEnqueue,
-  onOpenQueue
+  onOpenQueue,
+  commandLabel = 'Comando FFmpeg'
 }: {
   preview: OperationPreview | null;
   error: string | null;
@@ -18,6 +19,7 @@ export function CommandPreview({
   disabled: boolean;
   onEnqueue: () => void;
   onOpenQueue: () => void;
+  commandLabel?: string;
 }) {
   const [copied, setCopied] = useState(false);
   const copy = async (): Promise<void> => {
@@ -63,8 +65,8 @@ export function CommandPreview({
         <div className="command">
           <div className="command-head">
             <span>
-              Comando FFmpeg{preview.stepCount > 1 ? ` (passo 1 de ${preview.stepCount})` : ''}
-              {preview.jobs > 1 ? ' · primeiro arquivo' : ''}
+              {commandLabel}{preview.stepCount > 1 ? ` (passo 1 de ${preview.stepCount})` : ''}
+              {preview.jobs > 1 && !commandLabel.includes('primeiro') ? ' · primeiro arquivo' : ''}
             </span>
             <button type="button" onClick={() => void copy()}>
               <Icon name={copied ? 'check' : 'copy'} size={12} /> {copied ? 'Copiado' : 'Copiar'}

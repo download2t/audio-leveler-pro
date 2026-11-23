@@ -1944,3 +1944,20 @@ select.input {
   padding: 3px 14px;
   white-space: nowrap;
 }
+
+.range-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.range-field input[type='range'] {
+  flex: 1;
+  accent-color: var(--accent);
+}
+
+.range-field .mono {
+  min-width: 28px;
+  text-align: right;
+  font-weight: 600;
+}

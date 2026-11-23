@@ -28,7 +28,7 @@ class Logger {
   init(dir: string): void {
     try {
       mkdirSync(dir, { recursive: true });
-      this.filePath = join(dir, `audio-leveler-${new Date().toISOString().slice(0, 10)}.log`);
+      this.filePath = join(dir, `ferramentaskit-${new Date().toISOString().slice(0, 10)}.log`);
       this.stream = createWriteStream(this.filePath, { flags: 'a' });
     } catch (err) {
       console.error('[logger] não foi possível abrir o arquivo de log', err);

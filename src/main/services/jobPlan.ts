@@ -6,6 +6,8 @@ export interface JobStepPlan {
   durationSec: number;
   label: string;
   inWorkDir?: boolean;
+  /** In-process step (e.g. sharp for photos) run instead of FFmpeg; `args` is then ignored. */
+  run?: (ctx: { workDir: string; signal: AbortSignal }) => Promise<void>;
 }
 
 /** Everything the queue needs to run one job; produced by the operation services. */

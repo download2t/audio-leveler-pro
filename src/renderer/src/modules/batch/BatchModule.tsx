@@ -18,7 +18,7 @@ export const JOB_STATUS_LABELS: Record<JobStatus, string> = {
 };
 export const MODULE_LABELS: Record<HistoryEntry['module'], string> = {
   'audio-convert': 'Conversor de Áudio', 'video-convert': 'Conversor de Vídeo', 'audio-edit': 'Editor de Áudio',
-  'video-edit': 'Editor de Vídeo', normalizer: 'Normalizador'
+  'video-edit': 'Editor de Vídeo', 'image-convert': 'Conversor de Imagens', normalizer: 'Normalizador'
 };
 
 const speedText = (s: number | null): string => (s === null ? '—' : `${s >= 10 ? Math.round(s) : s.toFixed(1)}×`);
@@ -119,6 +119,8 @@ function JobRow({ job, index, total }: { job: QueueJob; index: number; total: nu
   const [open, setOpen] = useState(false);
   const act = queue.action;
   const busy = job.status === 'running' || job.status === 'paused';
+  // Photos have no media timeline, so a "× realtime" speed is meaningless for them.
+  const timed = job.module !== 'image-convert';
   return (
     <div className={`job-row job-${job.status}`}>
       <span className="job-index">{index + 1}</span>
@@ -140,8 +142,8 @@ function JobRow({ job, index, total }: { job: QueueJob; index: number; total: nu
         )}
         {open && <code className="job-command">{job.command}</code>}
       </div>
-      <span className="mono job-metric" title="Velocidade (× tempo real)">{busy ? speedText(job.speed) : ''}</span>
-      <span className="mono job-metric" title="Tempo restante">{busy ? etaText(job.etaSec) : job.finishedAt && job.startedAt ? formatElapsed(job.finishedAt - job.startedAt) : ''}</span>
+      <span className="mono job-metric" title="Velocidade (× tempo real)">{busy && timed ? speedText(job.speed) : ''}</span>
+      <span className="mono job-metric" title="Tempo restante">{busy && timed ? etaText(job.etaSec) : job.finishedAt && job.startedAt ? formatElapsed(job.finishedAt - job.startedAt) : ''}</span>
       <span className={`badge badge-${job.status === 'queued' ? 'pending' : job.status === 'running' ? 'analyzed' : job.status === 'paused' ? 'skipped' : job.status}`}>{JOB_STATUS_LABELS[job.status]}</span>
       <div className="media-actions">
         {job.status === 'queued' && (
@@ -215,20 +217,24 @@ function HistoryView() {
 
 function PresetBatchView({ active }: { active: boolean }) {
   const { presets, settingsApi } = useApp();
-  const files = useMediaFiles('media');
-  const io = useModuleFiles(files, 'media', active);
+  const files = useMediaFiles('all');
+  const io = useModuleFiles(files, 'all', active);
   const [presetId, setPresetId] = useState('builtin-youtube-1080');
   const preset = presets.presets.find((p) => p.id === presetId);
   const outputDir = settingsApi.settings?.media.outputDir ?? '';
 
   const request = useMemo<OperationRequest | null>(() => {
     if (!preset) return null;
-    // Audio presets accept audio and video (extracting the audio); video presets need a video stream.
-    const eligible = files.ready.filter((f) => (preset.module === 'video-convert' ? f.info?.video : f.info?.audio)).map((f) => f.path);
+    // Audio presets accept audio and video (extracting the audio); video presets need video; image presets need photos.
+    const eligible = files.ready
+      .filter((f) => (preset.module === 'video-convert' ? f.info?.video : preset.module === 'image-convert' ? f.info?.image : f.info?.audio))
+      .map((f) => f.path);
     if (!eligible.length) return null;
-    return preset.module === 'audio-convert'
-      ? { module: 'audio-convert', files: eligible, outputDir, options: preset.options }
-      : { module: 'video-convert', files: eligible, outputDir, options: preset.options };
+    switch (preset.module) {
+      case 'audio-convert': return { module: 'audio-convert', files: eligible, outputDir, options: preset.options };
+      case 'video-convert': return { module: 'video-convert', files: eligible, outputDir, options: preset.options };
+      case 'image-convert': return { module: 'image-convert', files: eligible, outputDir, options: preset.options };
+    }
   }, [preset, files.ready, outputDir]);
   const op = useOperation(request);
   const skipped = preset ? files.ready.length - (request?.files.length ?? 0) : 0;
@@ -238,7 +244,7 @@ function PresetBatchView({ active }: { active: boolean }) {
       header={null}
       main={
         <>
-          <MediaFileList api={files} kind="media" onAdd={() => void io.pickFiles()} onAddFolder={() => void io.pickFolder()} hint="Misture áudios e vídeos: o preset escolhido é aplicado a todos os arquivos compatíveis." />
+          <MediaFileList api={files} kind="media" onAdd={() => void io.pickFiles()} onAddFolder={() => void io.pickFolder()} hint="Misture áudios, vídeos e fotos: o preset escolhido é aplicado a todos os arquivos compatíveis." />
           {io.overlay}
         </>
       }
@@ -257,13 +263,18 @@ function PresetBatchView({ active }: { active: boolean }) {
                     <option key={p.id} value={p.id}>{p.name}{p.builtin ? '' : ' (meu)'}</option>
                   ))}
                 </optgroup>
+                <optgroup label="Imagem">
+                  {presets.presets.filter((p) => p.module === 'image-convert').map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}{p.builtin ? '' : ' (meu)'}</option>
+                  ))}
+                </optgroup>
               </select>
             </Field>
-            {skipped > 0 && <div className="notice notice-warn">{skipped} arquivo(s) sem {preset?.module === 'video-convert' ? 'vídeo' : 'áudio'} serão ignorados.</div>}
+            {skipped > 0 && <div className="notice notice-warn">{skipped} arquivo(s) sem {preset?.module === 'video-convert' ? 'vídeo' : preset?.module === 'image-convert' ? 'imagem' : 'áudio'} serão ignorados.</div>}
           </Section>
           <Section title="Saída">
             <OutputDirField />
-            <CommandPreview preview={op.preview} error={op.error} busy={op.busy} disabled={!request} onEnqueue={() => void op.enqueue()} onOpenQueue={op.openQueue} />
+            <CommandPreview preview={op.preview} error={op.error} busy={op.busy} disabled={!request} onEnqueue={() => void op.enqueue()} onOpenQueue={op.openQueue} commandLabel={preset?.module === 'image-convert' ? 'Prévia do primeiro arquivo' : undefined} />
           </Section>
         </>
       }

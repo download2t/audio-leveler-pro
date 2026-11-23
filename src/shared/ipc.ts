@@ -52,7 +52,7 @@ export const IPC = {
 } as const;
 
 /** API exposed to the renderer as `window.api` by the preload script. */
-export interface AudioLevelerApi {
+export interface FerramentasKitApi {
   getPathForFile(file: File): string;
   pickFiles(): Promise<string[]>;
   pickFolders(): Promise<string[]>;

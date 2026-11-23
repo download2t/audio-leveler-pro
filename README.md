@@ -1,11 +1,12 @@
-# Audio Leveler Pro — Suíte Multimídia
+# FerramentasKit — Suíte Multimídia
 
 Aplicativo desktop multiplataforma (Windows, macOS e Linux) para **normalizar, converter e editar
-áudio e vídeo em lote**. Todas as operações passam por uma única **fila de processamento** com
+áudio, vídeo e fotos em lote**. Todas as operações passam por uma única **fila de processamento** com
 pausa, cancelamento, reordenação, velocidade e tempo restante, e cada execução fica registrada no
 **histórico**.
 
-Feito com **Electron + React + TypeScript (strict)** e **FFmpeg/FFprobe**, que já vêm embutidos.
+Feito com **Electron + React + TypeScript (strict)**, **FFmpeg/FFprobe** (áudio e vídeo) e **sharp/libvips**
+(fotos), todos embutidos.
 
 **Desenvolvido por Matheus D. Barros.**
 
@@ -18,6 +19,7 @@ Feito com **Electron + React + TypeScript (strict)** e **FFmpeg/FFprobe**, que j
 | **Normalizador de Áudio** | Nivela o volume de centenas de músicas por **LUFS** (−23/−18/−16/−14/−12/personalizado), **ReplayGain** (Track/Album), **Pico** ou **RMS**, com proteção de true peak, prévia do ganho ao vivo, metadados e capa preservados e relatório final |
 | **Conversor de Áudio** | MP3, WAV, FLAC, AAC, M4A, OGG, OPUS e WMA; codec, bitrate, frequência (44,1/48/96 kHz), canais, metadados; estimativa de tamanho e prévia do comando |
 | **Conversor de Vídeo** | MP4, MKV, AVI, MOV, WEBM, MPEG e FLV; H.264, H.265, AV1 e VP9 (validados por contêiner); resolução (original, 4K, 1440p, 1080p, 720p, 480p, personalizada); qualidade; FPS; áudio (codec, bitrate, canais); mostra tamanho original, tamanho e tempo estimados e o comando FFmpeg |
+| **Conversor de Imagens** | Comprime, redimensiona e converte fotos entre JPEG, PNG, WebP, AVIF, TIFF e GIF: qualidade fixa, **tamanho máximo por foto** (ex.: até 500 KB) ou sem perda; PNG com paleta reduzida; caber em largura/altura, porcentagem ou tamanho exato (cortar, bordas, esticar); endireita fotos pela orientação EXIF; mantém ou remove EXIF/GPS; prévia com o tamanho real do primeiro arquivo |
 | **Editor de Áudio** | Juntar (com crossfade), dividir (duração, partes ou pontos), cortar, remover silêncio, fade in, fade out, volume, velocidade (com ou sem manter o tom), mono/estéreo e **Loop / Estender**, sempre em lote |
 | **Editor de Vídeo** | Juntar, cortar (rápido ou preciso), dividir, remover trechos, redimensionar, rotacionar, espelhar, extrair áudio, substituir áudio, legenda (gravada ou como faixa), marca d'água (imagem ou texto), gerar GIF e **Loop / Estender** |
 | **Ferramentas em Lote** | **Fila** (pausar, continuar, cancelar, reordenar, repetir; progresso individual e geral, velocidade, ETA), **Histórico** e **Lote com preset** (aplicar um preset a centenas de arquivos de áudio e vídeo misturados) |
@@ -39,7 +41,8 @@ horas leva segundos em vez de recodificar tudo.
 ### Presets
 
 Prontos: **YouTube 1080p, YouTube Shorts, TikTok, Instagram Reels, WhatsApp, Telegram, Podcast MP3
-128 kbps, Podcast MP3 320 kbps, FLAC Lossless**. Nos conversores, "Salvar" cria um preset com as
+128 kbps, Podcast MP3 320 kbps, FLAC Lossless** e, para fotos, **Web (WebP 1920px), WhatsApp (JPEG 1600px), E-mail
+(JPEG até 500 KB), Instagram (JPEG 1080px), Compressão máxima (AVIF) e Sem perda (PNG)**. Nos conversores, "Salvar" cria um preset com as
 opções atuais. Os presets ficam em `presets.json` e podem ser aplicados em lote em
 Ferramentas em Lote → Lote com preset.
 
@@ -100,9 +103,9 @@ A ordem de busca é: caminho configurado em `settings.json` (`ffmpegPath` / `ffp
 binário embutido → `ffmpeg`/`ffprobe` do `PATH`. O selo no cabeçalho mostra a versão em uso.
 As configurações ficam em:
 
-- Windows: `%APPDATA%/Audio Leveler Pro/settings.json`
-- macOS: `~/Library/Application Support/Audio Leveler Pro/settings.json`
-- Linux: `~/.config/Audio Leveler Pro/settings.json`
+- Windows: `%APPDATA%/FerramentasKit/settings.json`
+- macOS: `~/Library/Application Support/FerramentasKit/settings.json`
+- Linux: `~/.config/FerramentasKit/settings.json`
 
 ---
 
@@ -121,7 +124,7 @@ As configurações ficam em:
 
 1. Arraste arquivos ou pastas para a janela (ou use **Arquivos** / **Pasta**).
 2. Escolha o modo no painel esquerdo, por exemplo **LUFS → −14 (Spotify/YouTube)**.
-3. Confira a **pasta de saída** (padrão: `Músicas/Audio Leveler Pro`).
+3. Confira a **pasta de saída** (padrão: `Músicas/FerramentasKit`).
 4. Opcional: clique em **Analisar** para medir tudo antes. A tabela passa a mostrar o volume atual,
    o volume final previsto e o ganho, que se atualizam na hora quando você muda o alvo.
 5. Clique em **Normalizar**. Se houver arquivos selecionados, só eles são processados.
@@ -204,7 +207,8 @@ src/
 
 | Pacote | Uso |
 | --- | --- |
-| `ffmpeg-static`, `ffprobe-static` | Binários embutidos (únicas dependências de runtime) |
+| `ffmpeg-static`, `ffprobe-static` | Binários do FFmpeg/FFprobe embutidos |
+| `sharp` | Compressão e conversão de fotos (libvips com mozjpeg, WebP, AVIF e quantização de paleta) |
 | `electron`, `electron-vite`, `vite`, `@vitejs/plugin-react` | Shell desktop e build |
 | `react`, `react-dom`, `typescript` | Interface e tipagem strict |
 | `vitest` | Testes |
@@ -235,6 +239,8 @@ npm test
   rodando reiniciam do começo ao continuar (no macOS e no Linux a pausa é real).
 - **Estimativas** de tamanho e tempo são heurísticas: dependem do conteúdo do vídeo e da máquina.
 - **AV1** (libaom) produz arquivos pequenos, mas é bem mais lento que H.264/H.265.
+- **Fotos HEIC (iPhone)** não são lidas: o sharp pré-compilado traz só AVIF entre os formatos HEIF (o HEVC tem
+  patentes). No iPhone, use Ajustes → Câmera → Formatos → "Mais Compatível", ou exporte em JPEG.
 - **Marca d'água em texto** usa uma fonte do sistema (Arial no Windows/macOS, DejaVu no Linux).
 
 - **Capa:** é mantida em MP3, FLAC e M4A. WAV, AAC (ADTS) e OGG não suportam capa como stream de
